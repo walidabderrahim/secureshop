@@ -1,0 +1,60 @@
+name: SAST — Bandit + Semgrep
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bandit:
+    name: Bandit (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit — user-service
+        run: bandit -r services/user-service/ -f json -o bandit-user.json || true
+
+      - name: Run Bandit — product-service
+        run: bandit -r services/product-service/ -f json -o bandit-product.json || true
+
+      - name: Run Bandit — notification-service
+        run: bandit -r services/notification-service/ -f json -o bandit-notif.json || true
+
+      - name: Upload Bandit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-reports
+          path: bandit-*.json
+
+  semgrep:
+    name: Semgrep (Node.js)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Semgrep — order-service
+        run: semgrep --config=p/nodejs services/order-service/ --json > semgrep-order.json || true
+
+      - name: Run Semgrep — payment-service
+        run: semgrep --config=p/nodejs services/payment-service/ --json > semgrep-payment.json || true
+
+      - name: Run Semgrep — inventory-service
+        run: semgrep --config=p/nodejs services/inventory-service/ --json > semgrep-inventory.json || true
+
+      - name: Upload Semgrep reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-reports
+          path: semgrep-*.json
