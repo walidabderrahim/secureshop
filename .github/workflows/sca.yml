@@ -1,0 +1,86 @@
+name: SCA — pip-audit + npm audit + Trivy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  pip-audit:
+    name: pip-audit (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit user-service
+        run: pip-audit -r services/user-service/requirements.txt || true
+
+      - name: Audit product-service
+        run: pip-audit -r services/product-service/requirements.txt || true
+
+      - name: Audit notification-service
+        run: pip-audit -r services/notification-service/requirements.txt || true
+
+  npm-audit:
+    name: npm audit (Node.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit order-service
+        run: cd services/order-service && npm install && npm audit --audit-level=high || true
+
+      - name: Audit payment-service
+        run: cd services/payment-service && npm install && npm audit --audit-level=high || true
+
+      - name: Audit inventory-service
+        run: cd services/inventory-service && npm install && npm audit --audit-level=high || true
+
+  trivy:
+    name: Trivy (Docker Images)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
+
+      - name: Scan user-service
+        run: trivy image --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-user.json secureshop-user-service:latest || true
+
+      - name: Scan product-service
+        run: trivy image --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-product.json secureshop-product-service:latest || true
+
+      - name: Scan order-service
+        run: trivy image --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-order.json secureshop-order-service:latest || true
+
+      - name: Scan payment-service
+        run: trivy image --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-payment.json secureshop-payment-service:latest || true
+
+      - name: Scan notification-service
+        run: trivy image --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-notif.json secureshop-notification-service:latest || true
+
+      - name: Scan inventory-service
+        run: trivy image --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-inventory.json secureshop-inventory-service:latest || true
+
+      - name: Upload Trivy reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: trivy-*.json
