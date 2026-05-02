@@ -21,7 +21,7 @@ services:
     expose:
       - "8001"
     environment:
-      - JWT_SECRET=changeme_in_production
+      - JWT_SECRET=${JWT_SECRET}
       - DB_URL=sqlite:///users.db
     networks:
       - secureshop-net
