@@ -1,0 +1,156 @@
+name: Step 5 — Container Image Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────────────
+  # JOB 1 : Build + scan avec Trivy (tous services)
+  # ──────────────────────────────────────────────
+  trivy-scan:
+    name: Trivy — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - product-service
+          - notification-service
+          - order-service
+          - payment-service
+          - inventory-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image — ${{ matrix.service }}
+        run: |
+          docker build \
+            -t secureshop/${{ matrix.service }}:${{ github.sha }} \
+            ./services/${{ matrix.service }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: secureshop/${{ matrix.service }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: 0   # ne bloque pas, on remonte en SARIF
+
+      - name: Upload Trivy SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}
+
+      - name: Run Trivy — table output (lisible)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: secureshop/${{ matrix.service }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: 0
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-${{ matrix.service }}
+          path: trivy-${{ matrix.service }}.sarif
+
+  # ──────────────────────────────────────────────
+  # JOB 2 : Grype — second avis (opinion Anchore)
+  # ──────────────────────────────────────────────
+  grype-scan:
+    name: Grype — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - product-service
+          - notification-service
+          - order-service
+          - payment-service
+          - inventory-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image — ${{ matrix.service }}
+        run: |
+          docker build \
+            -t secureshop/${{ matrix.service }}:${{ github.sha }} \
+            ./services/${{ matrix.service }}
+
+      - name: Run Grype scanner
+        uses: anchore/scan-action@v3
+        id: grype
+        with:
+          image: secureshop/${{ matrix.service }}:${{ github.sha }}
+          output-format: sarif
+          severity-cutoff: medium
+          fail-build: false
+
+      - name: Upload Grype SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}
+          category: grype-${{ matrix.service }}
+
+      - name: Upload Grype SARIF artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grype-${{ matrix.service }}
+          path: ${{ steps.grype.outputs.sarif }}
+
+  # ──────────────────────────────────────────────
+  # JOB 3 : SBOM avec Syft
+  # ──────────────────────────────────────────────
+  sbom-generation:
+    name: SBOM — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - product-service
+          - notification-service
+          - order-service
+          - payment-service
+          - inventory-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image — ${{ matrix.service }}
+        run: |
+          docker build \
+            -t secureshop/${{ matrix.service }}:${{ github.sha }} \
+            ./services/${{ matrix.service }}
+
+      - name: Generate SBOM with Syft (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: secureshop/${{ matrix.service }}:${{ github.sha }}
+          format: cyclonedx-json
+          output-file: sbom-${{ matrix.service }}.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}
+          path: sbom-${{ matrix.service }}.json

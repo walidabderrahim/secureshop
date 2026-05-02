@@ -1,0 +1,8 @@
+# ZAP Baseline Scan — règles personnalisées SecureShop
+# Format : ID_ALERTE	ACTION	# Commentaire
+# Actions : IGNORE (faux positif), WARN (avertissement), FAIL (bloque pipeline)
+
+10015	IGNORE	# Incomplete or No Cache-Control Header Set — contexte API REST, pas de UI
+10027	IGNORE	# Information Disclosure - Suspicious Comments — commentaires dev normaux
+90033	IGNORE	# Loosely Scoped Cookie — cookies non utilisés dans cette API
+10096	IGNORE	# Timestamp Disclosure — timestamps dans les réponses JSON normaux
