@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Fix workspace permissions
+        run: chmod -R a+rwX "${GITHUB_WORKSPACE}"
+
       - name: Start SecureShop via Docker Compose
         run: |
           docker compose up -d --build
@@ -31,19 +34,19 @@ jobs:
         run: |
           curl -f http://localhost/api/users/health     || echo "user-service KO"
           curl -f http://localhost/api/products/health  || echo "product-service KO"
-          curl -f http://localhost/api/orders/health    || echo "order-service KO"
+          curl -f http://localhost/api/orders/health     || echo "order-service KO"
 
       - name: ZAP Baseline Scan — API Gateway
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: 'http://localhost'
           rules_file_name: '.github/zap-rules.tsv'
           fail_action: false
           allow_issue_writing: false
-          
+          artifact_name: zap-baseline-report
 
       - name: ZAP Baseline Scan — user-service
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: 'http://localhost/api/users/health'
           fail_action: false
@@ -52,7 +55,7 @@ jobs:
         continue-on-error: true
 
       - name: ZAP Baseline Scan — product-service
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: 'http://localhost/api/products/health'
           fail_action: false
@@ -61,7 +64,7 @@ jobs:
         continue-on-error: true
 
       - name: ZAP Baseline Scan — order-service
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: 'http://localhost/api/orders/health'
           fail_action: false
