@@ -40,7 +40,7 @@ jobs:
           rules_file_name: '.github/zap-rules.tsv'
           fail_action: false
           allow_issue_writing: false
-          artifact_name: zap-baseline-report
+          
 
       - name: ZAP Baseline Scan — user-service
         uses: zaproxy/action-baseline@v0.12.0
