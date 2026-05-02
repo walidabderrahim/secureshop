@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 app.use(express.json());
-
+app.disable('x-powered-by');
 let inventory = [
   { product_id: 1, name: 'Laptop',     stock: 10 },
   { product_id: 2, name: 'Smartphone', stock: 25 },

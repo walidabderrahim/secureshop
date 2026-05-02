@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 app.use(express.json());
 const transactions = [];
-
+app.disable('x-powered-by');
 app.post('/pay', (req, res) => {
   const { order_id, amount } = req.body;
   if (!order_id || !amount)

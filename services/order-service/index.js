@@ -3,7 +3,7 @@ const app = express();
 app.use(express.json());
 const orders = [];
 let nextId = 1;
-
+app.disable('x-powered-by');
 app.post('/orders', (req, res) => {
   const { user_id, product_id, quantity } = req.body;
   if (!user_id || !product_id || !quantity)
