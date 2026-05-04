@@ -3,11 +3,9 @@ name: DAST — OWASP ZAP
 on:
   push:
     branches: [ main ]
-  workflow_call:  
+  workflow_call:
 
-permissions:
-  contents: read
-  issues: write
+# ← SUPPRIMER le bloc permissions: ici, il est dans pipeline.yml
 
 jobs:
   zap-scan:
