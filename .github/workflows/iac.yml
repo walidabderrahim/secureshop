@@ -1,0 +1,50 @@
+name: IaC Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Scan Dockerfiles
+        run: |
+          checkov -d . --framework dockerfile \
+            --output sarif \
+            --output-file checkov-dockerfile.sarif \
+            --soft-fail
+        continue-on-error: true
+
+      - name: Scan docker-compose.yml
+        run: |
+          checkov -f docker-compose.yml \
+            --output sarif \
+            --output-file checkov-compose.sarif \
+            --soft-fail
+        continue-on-error: true
+
+      - name: Upload SARIF - Dockerfile
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-dockerfile.sarif
+          category: checkov-dockerfile
+        if: always()
+
+      - name: Upload SARIF - Compose
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-compose.sarif
+          category: checkov-compose
+        if: always()
