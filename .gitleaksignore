@@ -1,0 +1,7 @@
+# Faux positif : clé GPG publique officielle Python dans les rapports Trivy
+356a21891db2f8f1e432f1045a473e501fe477b5:trivy-notif.json:generic-api-key:63
+356a21891db2f8f1e432f1045a473e501fe477b5:trivy-notif.json:generic-api-key:150
+356a21891db2f8f1e432f1045a473e501fe477b5:trivy-product.json:generic-api-key:63
+356a21891db2f8f1e432f1045a473e501fe477b5:trivy-product.json:generic-api-key:150
+356a21891db2f8f1e432f1045a473e501fe477b5:trivy-user.json:generic-api-key:63
+356a21891db2f8f1e432f1045a473e501fe477b5:trivy-user.json:generic-api-key:150
