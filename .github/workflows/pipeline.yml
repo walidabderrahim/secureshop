@@ -1,0 +1,47 @@
+name: Full DevSecOps Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+
+  sast:
+    name: "Step 2 — SAST"
+    uses: ./.github/workflows/sast.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  sca:
+    name: "Step 3 — SCA"
+    needs: sast
+    uses: ./.github/workflows/sca.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  secrets:
+    name: "Step 4 — Secrets Detection"
+    needs: sca
+    uses: ./.github/workflows/secrets.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  iac:
+    name: "Step 7 — IaC Scanning"
+    needs: secrets
+    uses: ./.github/workflows/iac.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  dast:
+    name: "Step 6 — DAST"
+    needs: iac
+    uses: ./.github/workflows/dast.yml
+    permissions:
+      contents: read
+      security-events: write
